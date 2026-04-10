@@ -1,15 +1,3 @@
-Kondicioner
-Kondicioner
-foksimilian
-•
-отдыхаю
-
-khs. #xvckhs. #xvc [+VII],  — 1:41
-чек
-че
-ты даун
-нет
-khs. #xvckhs. #xvc [+VII],  — 16:40
 import asyncio
 import logging
 import os
