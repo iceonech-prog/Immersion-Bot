@@ -157,7 +157,7 @@ async def reply_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status = await get_ticket_status(message_id)
     if status and status != "pending":
         await query.answer(f"⛔ Заявка #{ticket_num} уже обработана (статус: {status})", show_alert=True)
-        return
+        return ConversationHandler.END
     
     context.user_data["reply_to_msg"] = message_id
     context.user_data["ticket_num"] = ticket_num
@@ -321,9 +321,8 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 # ========== ЗАПУСК ==========
-async def main():
-    await init_db()
-    
+def main():
+    # Создаём и настраиваем приложение
     application = Application.builder().token(BOT_TOKEN).build()
     
     # ConversationHandler для отправки идеи
@@ -360,8 +359,13 @@ async def main():
     application.add_handler(CallbackQueryHandler(approve_button, pattern="^approve_"))
     application.add_handler(CallbackQueryHandler(reject_button, pattern="^reject_"))
     
+    # Инициализируем базу данных
+    asyncio.get_event_loop().run_until_complete(init_db())
+    
     print("✅ Бот запущен на Render.com (python-telegram-bot)!")
-    await application.run_polling()
+    
+    # Запускаем бота
+    application.run_polling()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
