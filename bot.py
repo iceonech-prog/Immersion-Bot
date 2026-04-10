@@ -1,3 +1,99 @@
+Kondicioner
+Kondicioner
+foksimilian
+•
+отдыхаю
+
+khs. #xvckhs. #xvc [+VII],  — 1:41
+чек
+че
+ты даун
+нет
+khs. #xvckhs. #xvc [+VII],  — 16:40
+import asyncio
+import logging
+import os
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import Command
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+
+bot.py
+14 кб
+import aiosqlite
+
+DB_NAME = "bot_database.db"
+
+# Создаем таблицу при первом запуске
+async def init_db():
+
+database.py
+3 кб
+aiogram==3.4.1
+aiosqlite==0.19.0
+pydantic==2.5.0
+aiohttp==3.9.5
+requirements.txt
+1 кб
+# config.py
+# ВНИМАНИЕ: На Render этот файл НЕ ИСПОЛЬЗУЕТСЯ!
+# Токен и ID админов берутся из переменных окружения.
+# Этот файл нужен только для локального тестирования на вашем компьютере.
+
+BOT_TOKEN = "8711955237:AAHUUI-Of_k4A-jwacmD_QdcnLn3mFwcSow"
+
+config.py
+1 кб
+KondicionerKondicioner [+VII],  — 16:43
+https://github.com/iceonech-prog/Immersion-Bot.git
+GitHub
+GitHub - iceonech-prog/Immersion-Bot
+Contribute to iceonech-prog/Immersion-Bot development by creating an account on GitHub.
+khs. #xvckhs. #xvc [+VII],  — 16:49
+python-3.10.11
+runtime.txt
+1 кб
+KondicionerKondicioner [+VII],  — 20:41
+Але
+кутак
+https://github.com/iceonech-prog/Immersion-Bot.git
+GitHub
+GitHub - iceonech-prog/Immersion-Bot
+Contribute to iceonech-prog/Immersion-Bot development by creating an account on GitHub.
+khs. #xvckhs. #xvc [+VII],  — 20:58
+aiogram==3.3.0
+aiosqlite==0.19.0
+pydantic==2.4.2
+aiohttp==3.8.5
+python-dotenv==1.0.0
+requirements.txt
+1 кб
+import asyncio
+import logging
+import os
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ConversationHandler, ContextTypes
+from telegram.constants import ParseMode
+
+bot.py
+16 кб
+python-telegram-bot==20.6
+aiosqlite==0.19.0
+python-dotenv==1.0.0
+requirements.txt
+1 кб
+khs. #xvckhs. #xvc [+VII],  — 21:25
+import asyncio
+import logging
+import os
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ConversationHandler, ContextTypes
+from telegram.constants import ParseMode
+
+message.txt
+16 кб
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import asyncio
 import logging
 import os
@@ -7,8 +103,116 @@ from telegram.constants import ParseMode
 
 # Токен и ID админов из переменных окружения
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN не найден в переменных окружения")
+
 ADMIN_IDS_STR = os.getenv("ADMIN_IDS", "")
-ADMIN_IDS = [int(x.strip()) for x in ADMIN_IDS_STR.split(",") if x.strip()]
+ADMIN_IDS = [int(x.strip()) for x in ADMIN_IDS_STR.split(",") if x.strip()] if ADMIN_IDS_STR else []
+
+from database import init_db, save_ticket, update_ticket_status, get_user_by_message, get_ticket_status
+
+# Настройка логирования
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+# Состояния для ConversationHandler
+WAITING_IDEA, WAITING_QUESTION, WAITING_REPLY = range(3)
+
+# Счётчик заявок
+ticket_counter = 0
+
+def get_next_ticket_number():
+    global ticket_counter
+    ticket_counter += 1
+    return ticket_counter
+
+# Клавиатура главного меню
+main_keyboard = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="💡 Отправить идею")],
+        [KeyboardButton(text="❓ Задать вопрос")]
+    ],
+    resize_keyboard=True
+)
+
+# ========== КОМАНДА /start ==========
+async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        f"👋 Привет, {update.effective_user.full_name}!\n\n"
+        "Я бот для связи с командой.\nВыберите действие:",
+        reply_markup=main_keyboard
+    )
+
+# ========== ОТПРАВИТЬ ИДЕЮ ==========
+async def idea_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "📝 Опишите свою идею ниже:",
+        reply_markup=ReplyKeyboardMarkup.remove_keyboard()
+    )
+    return WAITING_IDEA
+
+# ========== ЗАДАТЬ ВОПРОС ==========
+async def question_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "❓ Опишите ваш вопрос ниже:",
+        reply_markup=ReplyKeyboardMarkup.remove_keyboard()
+    )
+    return WAITING_QUESTION
+
+# ========== ПОЛУЧЕНИЕ ИДЕИ ==========
+async def process_idea(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    username = update.effective_user.username or "без username"
+    ticket_num = get_next_ticket_number()
+    message_text = update.message.text
+    message_id = update.message.message_id
+    
+    admin_kb = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Одобрить", callback_data=f"approve_{message_id}_{ticket_num}"),
+            InlineKeyboardButton("❌ Отказать", callback_data=f"reject_{message_id}_{ticket_num}")
+        ]
+    ])
+    
+    for admin_id in ADMIN_IDS:
+        try:
+            await context.bot.send_message(
+                chat_id=admin_id,
+                text=(
+                    f"💡 <b>НОВАЯ ИДЕЯ #{ticket_num}</b>\n\n"
+                    f"👤 От: @{username} (ID: <code>{user_id}</code>)\n\n"
+                    f"📄 <b>Содержание:</b>\n{message_text}"
+                ),
+                reply_markup=admin_kb,
+                parse_mode=ParseMode.HTML
+            )
+        except Exception as e:
+            logger.error(f"Ошибка отправки админу {admin_id}: {e}")
+    
+... (осталось: 274 строки)
+
+message.txt
+16 кб
+﻿
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import asyncio
+import logging
+import os
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ConversationHandler, ContextTypes
+from telegram.constants import ParseMode
+
+# Токен и ID админов из переменных окружения
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN не найден в переменных окружения")
+
+ADMIN_IDS_STR = os.getenv("ADMIN_IDS", "")
+ADMIN_IDS = [int(x.strip()) for x in ADMIN_IDS_STR.split(",") if x.strip()] if ADMIN_IDS_STR else []
 
 from database import init_db, save_ticket, update_ticket_status, get_user_by_message, get_ticket_status
 
@@ -148,7 +352,7 @@ async def reply_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if query.from_user.id not in ADMIN_IDS:
         await query.answer("⛔ Нет прав", show_alert=True)
-        return
+        return ConversationHandler.END
     
     parts = query.data.split("_")
     message_id = int(parts[1])
@@ -321,8 +525,11 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 # ========== ЗАПУСК ==========
-def main():
-    # Создаём и настраиваем приложение
+if __name__ == "__main__":
+    # Инициализируем базу данных
+    asyncio.get_event_loop().run_until_complete(init_db())
+    
+    # Создаём приложение
     application = Application.builder().token(BOT_TOKEN).build()
     
     # ConversationHandler для отправки идеи
@@ -359,13 +566,9 @@ def main():
     application.add_handler(CallbackQueryHandler(approve_button, pattern="^approve_"))
     application.add_handler(CallbackQueryHandler(reject_button, pattern="^reject_"))
     
-    # Инициализируем базу данных
-    asyncio.get_event_loop().run_until_complete(init_db())
-    
-    print("✅ Бот запущен на Render.com (python-telegram-bot)!")
+    print("✅ Бот запущен на Render.com!")
     
     # Запускаем бота
     application.run_polling()
-
-if __name__ == "__main__":
-    main()
+message.txt
+16 кб
