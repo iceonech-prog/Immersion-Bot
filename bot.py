@@ -151,7 +151,7 @@ async def reply_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     status = await get_ticket_status(message_id)
     if status and status != "pending":
-        await query.answer(f"⛔ Заявка #{ticket_num} уже обработана (статус: {status})", show_alert=True)
+        await query.answer(f"⛔ Заявка #{ticket_num} уже обработана", show_alert=True)
         return ConversationHandler.END
     
     context.user_data["reply_to_msg"] = message_id
@@ -173,7 +173,7 @@ async def send_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     status = await get_ticket_status(original_msg_id)
     if status and status != "pending":
-        await update.message.reply_text(f"⛔ Заявка #{ticket_num} уже обработана (статус: {status}). Ответ не отправлен.")
+        await update.message.reply_text(f"⛔ Заявка #{ticket_num} уже обработана.")
         return ConversationHandler.END
     
     user_id, ticket_type = await get_user_by_message(original_msg_id)
@@ -191,7 +191,7 @@ async def send_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.HTML
             )
             await update_ticket_status(original_msg_id, "answered")
-            await update.message.reply_text(f"✅ Ответ на заявку #{ticket_num} отправлен пользователю!")
+            await update.message.reply_text(f"✅ Ответ на заявку #{ticket_num} отправлен!")
             
             for admin in ADMIN_IDS:
                 try:
@@ -223,7 +223,7 @@ async def approve_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     status = await get_ticket_status(message_id)
     if status and status != "pending":
-        await query.answer(f"⛔ Заявка #{ticket_num} уже обработана (статус: {status})", show_alert=True)
+        await query.answer(f"⛔ Заявка #{ticket_num} уже обработана", show_alert=True)
         return
     
     user_id, _ = await get_user_by_message(message_id)
@@ -272,7 +272,7 @@ async def reject_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     status = await get_ticket_status(message_id)
     if status and status != "pending":
-        await query.answer(f"⛔ Заявка #{ticket_num} уже обработана (статус: {status})", show_alert=True)
+        await query.answer(f"⛔ Заявка #{ticket_num} уже обработана", show_alert=True)
         return
     
     user_id, _ = await get_user_by_message(message_id)
@@ -286,7 +286,7 @@ async def reject_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     f"📋 <b>Статус вашей идеи #{ticket_num}</b>\n\n"
                     f"К сожалению, ваша идея пока не может быть реализована.\n\n"
                     f"👤 <b>Администратор:</b> @{admin_name}\n"
-                    f"Но мы ценим ваше участие и будем рады новым предложениям!"
+                    f"Но мы ценим ваше участие!"
                 ),
                 parse_mode=ParseMode.HTML
             )
@@ -312,8 +312,14 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(init_db())
+    # Создаём новый event loop для Python 3.14
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     
+    # Инициализируем базу данных
+    loop.run_until_complete(init_db())
+    
+    # Создаём приложение
     application = Application.builder().token(BOT_TOKEN).build()
     
     idea_conv = ConversationHandler(
