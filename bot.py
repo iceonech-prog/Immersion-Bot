@@ -97,104 +97,19 @@ message.txt
 import asyncio
 import logging
 import os
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ConversationHandler, ContextTypes
-from telegram.constants import ParseMode
-
-# Токен и ID админов из переменных окружения
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN не найден в переменных окружения")
-
-ADMIN_IDS_STR = os.getenv("ADMIN_IDS", "")
-ADMIN_IDS = [int(x.strip()) for x in ADMIN_IDS_STR.split(",") if x.strip()] if ADMIN_IDS_STR else []
-
-from database import init_db, save_ticket, update_ticket_status, get_user_by_message, get_ticket_status
-
-# Настройка логирования
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
-
-# Состояния для ConversationHandler
-WAITING_IDEA, WAITING_QUESTION, WAITING_REPLY = range(3)
-
-# Счётчик заявок
-ticket_counter = 0
-
-def get_next_ticket_number():
-    global ticket_counter
-    ticket_counter += 1
-    return ticket_counter
-
-# Клавиатура главного меню
-main_keyboard = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="💡 Отправить идею")],
-        [KeyboardButton(text="❓ Задать вопрос")]
-    ],
-    resize_keyboard=True
-)
-
-# ========== КОМАНДА /start ==========
-async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        f"👋 Привет, {update.effective_user.full_name}!\n\n"
-        "Я бот для связи с командой.\nВыберите действие:",
-        reply_markup=main_keyboard
-    )
-
-# ========== ОТПРАВИТЬ ИДЕЮ ==========
-async def idea_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "📝 Опишите свою идею ниже:",
-        reply_markup=ReplyKeyboardMarkup.remove_keyboard()
-    )
-    return WAITING_IDEA
-
-# ========== ЗАДАТЬ ВОПРОС ==========
-async def question_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "❓ Опишите ваш вопрос ниже:",
-        reply_markup=ReplyKeyboardMarkup.remove_keyboard()
-    )
-    return WAITING_QUESTION
-
-# ========== ПОЛУЧЕНИЕ ИДЕИ ==========
-async def process_idea(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    username = update.effective_user.username or "без username"
-    ticket_num = get_next_ticket_number()
-    message_text = update.message.text
-    message_id = update.message.message_id
-    
-    admin_kb = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("✅ Одобрить", callback_data=f"approve_{message_id}_{ticket_num}"),
-            InlineKeyboardButton("❌ Отказать", callback_data=f"reject_{message_id}_{ticket_num}")
-        ]
-    ])
-    
-    for admin_id in ADMIN_IDS:
-        try:
-            await context.bot.send_message(
-                chat_id=admin_id,
-                text=(
-                    f"💡 <b>НОВАЯ ИДЕЯ #{ticket_num}</b>\n\n"
-                    f"👤 От: @{username} (ID: <code>{user_id}</code>)\n\n"
-                    f"📄 <b>Содержание:</b>\n{message_text}"
-                ),
-                reply_markup=admin_kb,
-                parse_mode=ParseMode.HTML
-            )
-        except Exception as e:
-            logger.error(f"Ошибка отправки админу {admin_id}: {e}")
-    
-... (осталось: 274 строки)
 
 message.txt
 16 кб
+khs. #xvckhs. #xvc [+VII],  — 22:32
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import asyncio
+import logging
+import os
+
+message.txt
+15 кб
 ﻿
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -206,7 +121,6 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKe
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ConversationHandler, ContextTypes
 from telegram.constants import ParseMode
 
-# Токен и ID админов из переменных окружения
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN не найден в переменных окружения")
@@ -216,16 +130,13 @@ ADMIN_IDS = [int(x.strip()) for x in ADMIN_IDS_STR.split(",") if x.strip()] if A
 
 from database import init_db, save_ticket, update_ticket_status, get_user_by_message, get_ticket_status
 
-# Настройка логирования
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-# Состояния для ConversationHandler
 WAITING_IDEA, WAITING_QUESTION, WAITING_REPLY = range(3)
 
-# Счётчик заявок
 ticket_counter = 0
 
 def get_next_ticket_number():
@@ -233,7 +144,6 @@ def get_next_ticket_number():
     ticket_counter += 1
     return ticket_counter
 
-# Клавиатура главного меню
 main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="💡 Отправить идею")],
@@ -242,7 +152,6 @@ main_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-# ========== КОМАНДА /start ==========
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         f"👋 Привет, {update.effective_user.full_name}!\n\n"
@@ -250,7 +159,6 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=main_keyboard
     )
 
-# ========== ОТПРАВИТЬ ИДЕЮ ==========
 async def idea_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📝 Опишите свою идею ниже:",
@@ -258,7 +166,6 @@ async def idea_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     return WAITING_IDEA
 
-# ========== ЗАДАТЬ ВОПРОС ==========
 async def question_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "❓ Опишите ваш вопрос ниже:",
@@ -266,7 +173,6 @@ async def question_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     return WAITING_QUESTION
 
-# ========== ПОЛУЧЕНИЕ ИДЕИ ==========
 async def process_idea(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     username = update.effective_user.username or "без username"
@@ -307,7 +213,6 @@ async def process_idea(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     return ConversationHandler.END
 
-# ========== ПОЛУЧЕНИЕ ВОПРОСА ==========
 async def process_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     username = update.effective_user.username or "без username"
@@ -345,7 +250,6 @@ async def process_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     return ConversationHandler.END
 
-# ========== КНОПКА "ОТВЕТИТЬ" ==========
 async def reply_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -369,7 +273,6 @@ async def reply_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.reply_text(f"✏️ Напишите ответ пользователю (заявка #{ticket_num}):")
     return WAITING_REPLY
 
-# ========== ОТПРАВКА ОТВЕТА ==========
 async def send_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in ADMIN_IDS:
         return ConversationHandler.END
@@ -419,7 +322,6 @@ async def send_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     return ConversationHandler.END
 
-# ========== ОДОБРЕНИЕ ИДЕИ ==========
 async def approve_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -469,7 +371,6 @@ async def approve_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await query.answer("❌ Пользователь не найден", show_alert=True)
 
-# ========== ОТКЛОНЕНИЕ ИДЕИ ==========
 async def reject_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -519,20 +420,15 @@ async def reject_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await query.answer("❌ Пользователь не найден", show_alert=True)
 
-# ========== ОТМЕНА ==========
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❌ Действие отменено.", reply_markup=main_keyboard)
     return ConversationHandler.END
 
-# ========== ЗАПУСК ==========
 if __name__ == "__main__":
-    # Инициализируем базу данных
     asyncio.get_event_loop().run_until_complete(init_db())
     
-    # Создаём приложение
     application = Application.builder().token(BOT_TOKEN).build()
     
-    # ConversationHandler для отправки идеи
     idea_conv = ConversationHandler(
         entry_points=[MessageHandler(filters.Regex("^💡 Отправить идею$"), idea_start)],
         states={
@@ -541,7 +437,6 @@ if __name__ == "__main__":
         fallbacks=[CommandHandler("cancel", cancel)]
     )
     
-    # ConversationHandler для отправки вопроса
     question_conv = ConversationHandler(
         entry_points=[MessageHandler(filters.Regex("^❓ Задать вопрос$"), question_start)],
         states={
@@ -550,7 +445,6 @@ if __name__ == "__main__":
         fallbacks=[CommandHandler("cancel", cancel)]
     )
     
-    # ConversationHandler для ответа админа
     reply_conv = ConversationHandler(
         entry_points=[CallbackQueryHandler(reply_button, pattern="^reply_")],
         states={
@@ -568,7 +462,6 @@ if __name__ == "__main__":
     
     print("✅ Бот запущен на Render.com!")
     
-    # Запускаем бота
     application.run_polling()
 message.txt
-16 кб
+15 кб
